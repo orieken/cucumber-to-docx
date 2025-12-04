@@ -46,5 +46,13 @@ export default [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }]
     }
+  },
+  // Relax strict rules for tests and CLI scripts where 'any' and console logs are acceptable
+  {
+    files: ['tests/**/*.ts', 'src/cli/**'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-console': 'off'
+    }
   }
 ];
