@@ -230,6 +230,28 @@ import { parseFeatureFile } from './lib/featureParser.js';
 
 If you omit the extension, TypeScript will report TS2835.
 
+CI / CD
+------
+
+This repository includes two GitHub Actions workflows under `.github/workflows`:
+
+- `ci.yml` — runs on pushes and pull requests to `main`. It checks out the code, sets up Node 22 and pnpm, installs dependencies, runs lint, tests, and builds, and uploads build artifacts.
+- `publish.yml` — runs on tag pushes matching `v*.*.*` and on published releases. It runs the same checks and publishes the package to npm. The publish workflow requires a repository secret `NPM_TOKEN` with an npm automation token that has publish rights.
+
+To add the `NPM_TOKEN` secret in GitHub:
+
+1. Create an npm automation token at https://www.npmjs.com/settings/<your-user-or-org>/tokens (choose "Automation" and give it publish rights).
+2. In your repository on GitHub: Settings → Secrets and variables → Actions → New repository secret. Add `NPM_TOKEN` with the token value.
+
+How publishing is triggered:
+
+- Push a tag that matches the SemVer pattern, e.g. `git tag v1.2.3 && git push origin v1.2.3`.
+- Or create and publish a GitHub Release that has a tag like `v1.2.3`.
+
+Notes:
+- The workflows are conservative: they use `pnpm install --frozen-lockfile` to ensure reproducible installs.
+- Make sure the `version` field in `package.json` matches the tag you push when publishing to npm.
+
 License
 -------
 

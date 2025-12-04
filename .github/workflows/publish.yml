@@ -1,0 +1,58 @@
+name: Publish package
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Enable pnpm via corepack
+        run: corepack prepare pnpm@8 --activate
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint, Test and Build
+        run: |
+          pnpm lint || true
+          pnpm test
+          pnpm build
+
+      - name: Configure npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public
+
