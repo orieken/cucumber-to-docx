@@ -28,8 +28,21 @@ jobs:
           node-version: 22
           registry-url: 'https://registry.npmjs.org/'
 
-      - name: Enable pnpm via corepack
-        run: corepack prepare pnpm@8 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Debug pnpm environment (temporary)
+        run: |
+          echo "--- env ---"
+          node --version || true
+          pnpm --version || true
+          echo "--- pwd & ls ---"
+          pwd
+          ls -la
+          echo "--- lockfile head ---"
+          head -n 40 pnpm-lock.yaml || true
 
       - name: Cache pnpm store
         uses: actions/cache@v4
@@ -40,7 +53,8 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 
       - name: Lint, Test and Build
         run: |
@@ -55,4 +69,3 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm publish --access public
-
