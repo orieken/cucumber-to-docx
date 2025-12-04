@@ -13,6 +13,7 @@ export type { DocxOptions } from './lib/options.js';
 
 import { promises as fs } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+
 import { parseFeatureFile } from './lib/featureParser.js';
 import { createDocxFromFeature } from './lib/docxWriter.js';
 import type { DocxOptions } from './lib/options.js';

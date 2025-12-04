@@ -1,6 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'node:fs';
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Packer } from 'docx';
+
 import { createDocxFromFeature } from '../src/lib/docxWriter.js';
 import type { ParsedFeature } from '../src/lib/featureParser.js';
 

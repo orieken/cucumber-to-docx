@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'node:fs';
+
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the docx writer so we don't build real documents in this test
 vi.mock('../src/lib/docxWriter.js', () => {

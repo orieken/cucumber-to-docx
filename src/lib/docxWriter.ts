@@ -1,6 +1,8 @@
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, ShadingType, BorderStyle } from 'docx';
 import { promises as fs } from 'node:fs';
 import { dirname } from 'node:path';
+
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, ShadingType, BorderStyle } from 'docx';
+
 import type { ParsedFeature } from './featureParser.js';
 import type { ThemeConfig } from './theme.js';
 import { mergeOptions, type DocxOptions, type DocumentSettings } from './options.js';
