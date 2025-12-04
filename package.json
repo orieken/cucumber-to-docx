@@ -1,0 +1,42 @@
+{
+  "name": "@orieken/cucumber-to-docx",
+  "version": "0.0.0",
+  "description": "Convert Cucumber/Gherkin .feature files into nicely formatted Word .docx documents.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "bin": {
+    "cuke-docx": "dist/cli/cuke-docx.js"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts",
+    "test": "vitest run",
+    "build": "vite build && tsc -p tsconfig.cli.json",
+    "clean": "node -e \"const fs=require('node:fs');['dist','docx','coverage'].forEach(d=>{try{fs.rmSync(d,{recursive:true,force:true})}catch{}})\"",
+    "cli:smoke": "node scripts/smoke-cli.mjs",
+    "cli:smoke:build": "pnpm build && node scripts/smoke-cli.mjs",
+    "cli:smoke:clean": "node -e \"require('node:fs').rmSync('docx',{recursive:true,force:true})\" && node scripts/smoke-cli.mjs"
+  },
+  "dependencies": {
+    "@types/node": "^24.10.1",
+    "docx": "^9.5.1",
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.15"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "4.0.15"
+  }
+}

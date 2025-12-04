@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.vite/
+.DS_Store
+docx/
+pokemon-manual-test.docx
+coverage/
+.idea/
