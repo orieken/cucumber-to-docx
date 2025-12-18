@@ -33,7 +33,17 @@ function scenarioHeading(text: string, theme: ThemeConfig, doc: DocumentSettings
   });
 }
 
-function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSettings): Table {
+function backgroundHeading(text: string, theme: ThemeConfig, doc: DocumentSettings): Paragraph {
+  const label = doc.labels.backgroundHeader;
+  const headingText = text ? `${label}: ${text}` : label;
+  return new Paragraph({
+    alignment: AlignmentType.LEFT,
+    children: [new TextRun({ text: headingText, bold: true, size: doc.sizes.scenario, font: doc.font, color: theme.bodyText })],
+    spacing: { before: doc.spacing.scenarioBefore, after: doc.spacing.scenarioAfter }
+  });
+}
+
+export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSettings): Table {
   const headerCells = [
     new TableCell({
       children: [new Paragraph({ children: [new TextRun({ text: doc.labels.stepHeader, bold: true, color: theme.headerText, font: doc.font, size: doc.sizes.tableText })], spacing: { before: 0, after: 0 } })],
@@ -51,13 +61,25 @@ function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSettings):
 
   const rows: TableRow[] = [new TableRow({ children: headerCells })];
 
+  let effectiveContext = 'Given'; // defaults to Given until we see When or Then
+
   steps.forEach((step, idx) => {
     const n = idx + 1;
     const checkboxStep = `${doc.checkbox} ${n}. ${step}`;
 
-    // Expected result heuristic: from Then/And following Then, strip the keyword
+    // Determine current keyword
+    const match = step.match(/^(Given|When|Then|And)\s+/);
+    if (match) {
+      const kw = match[1]!;
+      if (kw !== 'And') {
+        effectiveContext = kw;
+      }
+    }
+
+    // Expected result heuristic: Only if effective context is 'Then'
     let expected = '';
-    if (/^(Then|And)\s+/.test(step)) {
+    if (effectiveContext === 'Then') {
+      // Strip the keyword (Then/And) for cleanliness in the 'Expected' column
       expected = step.replace(/^(Then|And)\s+/, '');
     }
 
@@ -109,6 +131,12 @@ export async function createDocxFromFeature(
   // Description
   if (feature.description.length) {
     feature.description.forEach((d) => children.push(descriptionParagraph(d, theme, document)));
+  }
+
+  // Background
+  if (feature.background) {
+    children.push(backgroundHeading(feature.background.name, theme, document));
+    children.push(stepsTable(feature.background.steps, theme, document));
   }
 
   // Scenarios

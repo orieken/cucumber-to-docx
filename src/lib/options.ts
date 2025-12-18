@@ -18,6 +18,7 @@ export interface DocumentSettings {
   };
   labels: {
     scenarioPrefix: string;
+    backgroundHeader: string;
     stepHeader: string;
     expectedHeader: string;
     actualHeader: string;
@@ -47,6 +48,7 @@ export const defaultDocumentSettings: DocumentSettings = {
   },
   labels: {
     scenarioPrefix: 'Scenario: ',
+    backgroundHeader: 'Background',
     stepHeader: 'Step',
     expectedHeader: 'Expected Result',
     actualHeader: 'Actual Result'

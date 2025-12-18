@@ -21,7 +21,7 @@
   "scripts": {
     "lint": "eslint . --ext .ts",
     "test": "vitest run",
-    "build": "vite build && tsc -p tsconfig.cli.json",
+    "build": "vite build && tsc -p tsconfig.cli.json && chmod +x dist/cli/cuke-docx.js",
     "clean": "node -e \"const fs=require('node:fs');['dist','docx','coverage'].forEach(d=>{try{fs.rmSync(d,{recursive:true,force:true})}catch{}})\"",
     "cli:smoke": "node scripts/smoke-cli.mjs",
     "cli:smoke:build": "pnpm build && node scripts/smoke-cli.mjs",
