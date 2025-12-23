@@ -21,10 +21,15 @@ The CLI converts a single `.feature` file and writes the output into a `docx/` f
 # Single file
 npx cuke-docx path/to/feature/pokemon.feature
 # => docx/path/to/feature/pokemon.docx
+
+# Directory (recursive)
+npx cuke-docx features/
+# => docx/features/pokemon.docx
+# => docx/features/inventory/cart.docx
 ```
 
 - Default behavior: give it a file; it outputs with the same base name as `.docx` under `docx/`.
-- TODO: Allow passing a directory to convert all `.feature` files while mirroring the folder structure under `docx/`.
+- **Directory support**: Pass a directory path to recursively convert all `.feature` files while mirroring the folder structure under `docx/`.
 
 Build and smoke-test the CLI (local project)
 --------------------------------------------
@@ -52,6 +57,22 @@ pnpm cli:smoke --config path/to/config.json
 pnpm cli:smoke --concurrency 4
 ```
 
+Background Support
+------------------
+
+The tool automatically parses `Background` sections in your feature files. They are rendered before the scenarios with a configurable header (default "Background").
+
+You can customize the header label in your config:
+```json
+{
+  "document": {
+    "labels": {
+      "backgroundHeader": "Prerequisites"
+    }
+  }
+}
+```
+
 Configuration (theme + document settings)
 ----------------------------------------
 
@@ -68,6 +89,9 @@ npx cuke-docx --print-config
 #  1) { "theme": { ... }, "document": { ... } }
 #  2) { ...themeKeys } (legacy: theme-only file still supported)
 npx cuke-docx features/pokemon.feature --config config.json
+
+# Auto-discovery:
+# If you run `cuke-docx` without `--config`, it will look for `cuke-config.json` in the current directory.
 ```
 
 Default config (excerpt):
@@ -96,6 +120,7 @@ Default config (excerpt):
     },
     "labels": {
       "scenarioPrefix": "Scenario: ",
+      "backgroundHeader": "Background",
       "stepHeader": "Step",
       "expectedHeader": "Expected Result",
       "actualHeader": "Actual Result"
@@ -168,34 +193,8 @@ pnpm add -D @orieken/cucumber-to-docx
 # Convert a single file
 npx cuke-docx path/to/feature/example.feature
 
-# Convert many files (cross-platform Node script example)
-# scripts/convert-features.mjs
-import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
-import { spawn } from 'node:child_process';
-
-async function* walk(dir) {
-  for (const e of await fs.readdir(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.isDirectory()) yield* walk(full);
-    else if (e.isFile() && full.endsWith('.feature')) yield full;
-  }
-}
-
-for await (const f of walk('features')) {
-  await new Promise((res, rej) => {
-    const p = spawn(process.execPath, ['node_modules/@orieken/cucumber-to-docx/dist/cli/cuke-docx.js', f], { stdio: 'inherit' });
-    p.on('close', (code) => (code === 0 ? res() : rej(new Error(`Fail ${code}`))));
-  });
-}
-console.log('Done.');
-
-# Then in package.json
-{
-  "scripts": {
-    "build:test-docs": "node scripts/convert-features.mjs"
-  }
-}
+# Convert all features in a directory recursively
+npx cuke-docx features/
 ```
 
 Programmatic (library API):
