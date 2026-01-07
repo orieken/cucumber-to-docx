@@ -73,6 +73,66 @@ You can customize the header label in your config:
 }
 ```
 
+Step Formatting Options
+-----------------------
+
+### Remove Gherkin Keywords
+
+Set `removeGherkinKeywords: true` to remove Given/When/Then/And from the beginning of each step and automatically capitalize the first letter.
+
+**Before (default behavior):**
+```
+Given I am a user with an active account
+When I navigate to the "Add Pokemon" section
+Then I should see a confirmation message
+```
+
+**After (with `removeGherkinKeywords: true`):**
+```
+I am a user with an active account
+I navigate to the "Add Pokemon" section
+I should see a confirmation message
+```
+
+### Then Steps as Expected Results
+
+Set `thenStepsAsExpectedResults: true` to automatically place "Then" steps in the "Expected Result" column of the preceding "When" step, rather than as separate rows.
+
+**Default behavior:**
+- Each step (Given/When/Then) appears as a separate row
+- Then steps appear in the "Expected Result" column of their own row
+
+**With `thenStepsAsExpectedResults: true`:**
+- Then steps are moved to the "Expected Result" column of the previous When step
+- Reduces table rows and makes the relationship between actions and expectations clearer
+
+### Hide Step Numbers
+
+Set `showStepNumbers: false` to remove step numbering from the document.
+
+**Default behavior (with numbers):**
+```
+☐ 1. I am a user with an active account
+☐ 2. I navigate to the "Add Pokemon" section
+```
+
+**With `showStepNumbers: false`:**
+```
+☐ I am a user with an active account
+☐ I navigate to the "Add Pokemon" section
+```
+
+These options work together:
+```json
+{
+  "document": {
+    "removeGherkinKeywords": true,
+    "thenStepsAsExpectedResults": true,
+    "showStepNumbers": false
+  }
+}
+```
+
 Configuration (theme + document settings)
 ----------------------------------------
 
@@ -126,7 +186,10 @@ Default config (excerpt):
       "actualHeader": "Actual Result"
     },
     "table": { "widthPct": 100, "borderSize": 4 },
-    "checkbox": "☐"
+    "checkbox": "☐",
+    "removeGherkinKeywords": false,
+    "thenStepsAsExpectedResults": false,
+    "showStepNumbers": true
   }
 }
 ```
@@ -145,7 +208,10 @@ await convertFeatureFile('features/a.feature', 'docx/features/a.docx', {
     font: 'Calibri',
     labels: { scenarioPrefix: 'Test Scenario: ' },
     table: { widthPct: 100, borderSize: 6 },
-    checkbox: '[ ]'
+    checkbox: '[ ]',
+    removeGherkinKeywords: true,
+    thenStepsAsExpectedResults: true,
+    showStepNumbers: false
   }
 });
 ```

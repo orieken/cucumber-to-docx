@@ -1,0 +1,46 @@
+{
+  "theme": {
+    "headerText": "FFFFFF",
+    "bodyText": "000000",
+    "stepText": "000000",
+    "expectedText": "000000",
+    "actualText": "000000",
+    "headerBg": "4472C4",
+    "dataBgStep": "FFFFFF",
+    "dataBgExpected": "F2F2F2",
+    "dataBgActual": "FFFFFF",
+    "tableBorder": "000000"
+  },
+  "document": {
+    "font": "Arial",
+    "sizes": {
+      "title": 32,
+      "description": 22,
+      "scenario": 28,
+      "tableText": 22
+    },
+    "spacing": {
+      "titleBefore": 0,
+      "titleAfter": 240,
+      "descriptionBefore": 120,
+      "descriptionAfter": 240,
+      "scenarioBefore": 360,
+      "scenarioAfter": 120
+    },
+    "labels": {
+      "scenarioPrefix": "Scenario: ",
+      "backgroundHeader": "Background",
+      "stepHeader": "Step",
+      "expectedHeader": "Expected Result",
+      "actualHeader": "Actual Result"
+    },
+    "table": {
+      "widthPct": 100,
+      "borderSize": 4
+    },
+    "checkbox": "☐",
+    "removeGherkinKeywords": true,
+    "thenStepsAsExpectedResults": true,
+    "showStepNumbers": false
+  }
+}

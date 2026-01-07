@@ -1,0 +1,27 @@
+{
+  "theme": {
+    "bodyText": "#000000",
+    "headerBg": "#EFEFEF",
+    "headerText": "#333333",
+    "dataBgStep": "#FFFFFF",
+    "dataBgExpected": "#F9F9F9",
+    "dataBgActual": "#FFFFFF",
+    "tableBorder": "#999999"
+  },
+  "document": {
+    "font": "Calibri",
+    "removeGherkinKeywords": true,
+    "thenStepsAsExpectedResults": true,
+    "labels": {
+      "scenarioPrefix": "Test Case: ",
+      "backgroundHeader": "Prerequisites",
+      "stepHeader": "Action",
+      "expectedHeader": "Expected",
+      "actualHeader": "Actual"
+    },
+    "table": {
+      "widthPct": 100,
+      "borderSize": 4
+    }
+  }
+}

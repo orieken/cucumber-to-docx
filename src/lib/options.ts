@@ -28,6 +28,9 @@ export interface DocumentSettings {
     borderSize: number; // in eighths of a point as per docx spec
   };
   checkbox: string;
+  removeGherkinKeywords: boolean;
+  thenStepsAsExpectedResults: boolean;
+  showStepNumbers: boolean;
 }
 
 export const defaultDocumentSettings: DocumentSettings = {
@@ -57,7 +60,10 @@ export const defaultDocumentSettings: DocumentSettings = {
     widthPct: 100,
     borderSize: 4
   },
-  checkbox: '☐'
+  checkbox: '☐',
+  removeGherkinKeywords: false,
+  thenStepsAsExpectedResults: false,
+  showStepNumbers: true
 };
 
 export type PartialDocumentSettings = Partial<{
