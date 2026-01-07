@@ -1,6 +1,6 @@
 {
   "name": "@orieken/cucumber-to-docx",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Convert Cucumber/Gherkin .feature files into nicely formatted Word .docx documents.",
   "type": "module",
   "private": false,
