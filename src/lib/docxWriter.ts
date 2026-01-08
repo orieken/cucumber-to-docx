@@ -3,7 +3,7 @@ import { dirname } from 'node:path';
 
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, ShadingType, BorderStyle } from 'docx';
 
-import type { ParsedFeature } from './featureParser.js';
+import type { ParsedFeature, Step, Scenario, Example } from './featureParser.js';
 import type { ThemeConfig } from './theme.js';
 import { mergeOptions, type DocxOptions, type DocumentSettings } from './options.js';
 
@@ -43,7 +43,75 @@ function backgroundHeading(text: string, theme: ThemeConfig, doc: DocumentSettin
   });
 }
 
-export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSettings): Table {
+/**
+ * Create a simple data table for displaying test data
+ */
+function createDataTable(headers: string[], rows: string[][], theme: ThemeConfig, doc: DocumentSettings): Table {
+  const headerRow = new TableRow({
+    children: headers.map(h => new TableCell({
+      children: [new Paragraph({ 
+        children: [new TextRun({ text: h, bold: true, color: theme.headerText, font: doc.font, size: doc.sizes.tableText })],
+        spacing: { before: 0, after: 0 }
+      })],
+      shading: { type: ShadingType.CLEAR, color: 'auto', fill: theme.headerBg }
+    }))
+  });
+
+  const dataRows = rows.map(row => new TableRow({
+    children: row.map(cell => new TableCell({
+      children: [new Paragraph({
+        children: [new TextRun({ text: cell, color: theme.stepText, font: doc.font, size: doc.sizes.tableText })],
+        spacing: { before: 0, after: 0 }
+      })],
+      shading: { type: ShadingType.CLEAR, color: 'auto', fill: theme.dataBgStep }
+    }))
+  }));
+
+  return new Table({
+    width: { size: doc.table.widthPct, type: WidthType.PERCENTAGE },
+    borders: {
+      top: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
+      bottom: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
+      left: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
+      right: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
+      insideHorizontal: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
+      insideVertical: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE }
+    },
+    rows: [headerRow, ...dataRows]
+  });
+}
+
+/**
+ * Expand scenario outline with example data
+ */
+export function expandScenarioOutline(scenario: Scenario, exampleRow: string[], exampleHeaders: string[]): Scenario {
+  const replacements = new Map<string, string>();
+  exampleHeaders.forEach((header, idx) => {
+    replacements.set(`<${header}>`, exampleRow[idx] || '');
+  });
+
+  const expandedSteps: Step[] = scenario.steps.map(step => {
+    let expandedText = step.text;
+    replacements.forEach((value, placeholder) => {
+      expandedText = expandedText.replace(new RegExp(placeholder, 'g'), value);
+    });
+    return {
+      text: expandedText,
+      dataTable: step.dataTable
+    };
+  });
+
+  // Create name from first example value or row number
+  const firstValue = exampleRow[0] || '';
+  return {
+    name: `${scenario.name} - ${firstValue}`,
+    steps: expandedSteps
+  };
+}
+
+export function stepsTable(steps: Step[], theme: ThemeConfig, doc: DocumentSettings): (Table | Paragraph)[] {
+  const results: (Table | Paragraph)[] = [];
+  
   const headerCells = [
     new TableCell({
       children: [new Paragraph({ children: [new TextRun({ text: doc.labels.stepHeader, bold: true, color: theme.headerText, font: doc.font, size: doc.sizes.tableText })], spacing: { before: 0, after: 0 } })],
@@ -61,15 +129,15 @@ export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSet
 
   const rows: TableRow[] = [new TableRow({ children: headerCells })];
 
-  let effectiveContext = 'Given'; // defaults to Given until we see When or Then
-  let lastActionStepIndex: number | null = null; // track most recent action step (Given/When) for attaching Then results
+  let effectiveContext = 'Given';
+  let lastActionStepIndex: number | null = null;
   
-  // First pass: build step data with expected results
   interface StepData {
     stepText: string;
     expected: string[];
     checkboxStep: string;
     keyword: string;
+    dataTable?: { headers: string[]; rows: string[][] };
   }
   
   const stepDataList: StepData[] = [];
@@ -77,10 +145,9 @@ export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSet
   steps.forEach((step, idx) => {
     const n = idx + 1;
     
-    // Determine current keyword
-    const match = step.match(/^(Given|When|Then|And)\s+/);
+    const match = step.text.match(/^(Given|When|Then|And)\s+/);
     let keyword = '';
-    let stepText = step;
+    let stepText = step.text;
     
     if (match) {
       keyword = match[1]!;
@@ -88,10 +155,8 @@ export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSet
         effectiveContext = keyword;
       }
       
-      // Remove keyword if configured
       if (doc.removeGherkinKeywords) {
-        stepText = step.replace(/^(Given|When|Then|And)\s+/, '');
-        // Capitalize first letter
+        stepText = step.text.replace(/^(Given|When|Then|And)\s+/, '');
         stepText = stepText.charAt(0).toUpperCase() + stepText.slice(1);
       }
     }
@@ -100,32 +165,31 @@ export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSet
       ? `${doc.checkbox} ${n}. ${stepText}`
       : `${doc.checkbox} ${stepText}`;
 
-    // Handle expected results
     let expected: string[] = [];
     if (doc.thenStepsAsExpectedResults && effectiveContext === 'Then') {
-      // Append this Then/And-under-Then to the latest action step
       if (lastActionStepIndex !== null) {
         const prevStep = stepDataList[lastActionStepIndex];
         if (prevStep) {
           prevStep.expected = [...(prevStep.expected ?? []), stepText];
         }
       }
-      // Skip adding this Then step as a separate row
       return;
     } else if (!doc.thenStepsAsExpectedResults && effectiveContext === 'Then') {
-      // Old behavior: put Then step text in expected column
-      expected = [doc.removeGherkinKeywords ? stepText : step.replace(/^(Then|And)\s+/, '')];
+      expected = [doc.removeGherkinKeywords ? stepText : step.text.replace(/^(Then|And)\s+/, '')];
     }
     
-    stepDataList.push({ stepText, expected, checkboxStep, keyword: effectiveContext });
+    stepDataList.push({ 
+      stepText, 
+      expected, 
+      checkboxStep, 
+      keyword: effectiveContext,
+      dataTable: step.dataTable
+    });
 
-    // Update pointer to most recent action step (any Given or When step can have expected results)
     lastActionStepIndex = stepDataList.length - 1;
   });
   
-  // Second pass: create table rows from step data
   stepDataList.forEach((stepData) => {
-    // Create multiple paragraphs for expected results (one per line)
     const expectedParagraphs = stepData.expected.length > 0
       ? stepData.expected.map(line => new Paragraph({ 
           children: [new TextRun({ text: line, color: theme.expectedText, font: doc.font, size: doc.sizes.tableText })],
@@ -153,7 +217,7 @@ export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSet
     );
   });
 
-  return new Table({
+  const stepsTableElement = new Table({
     width: { size: doc.table.widthPct, type: WidthType.PERCENTAGE },
     borders: {
       top: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
@@ -165,18 +229,29 @@ export function stepsTable(steps: string[], theme: ThemeConfig, doc: DocumentSet
     },
     rows
   });
+
+  results.push(stepsTableElement);
+
+  stepDataList.forEach((stepData) => {
+    if (stepData.dataTable && stepData.dataTable.headers.length > 0) {
+      results.push(createDataTable(stepData.dataTable.headers, stepData.dataTable.rows, theme, doc));
+    }
+  });
+
+  return results;
 }
 
 export async function createDocxFromFeature(
   feature: ParsedFeature,
   outPath: string,
-  options?: DocxOptions
+  options?: Partial<DocxOptions>
 ): Promise<void> {
   const { theme, document } = mergeOptions(options);
+
   const children: (Paragraph | Table)[] = [];
 
   // Title
-  if (feature.name) children.push(titleParagraph(feature.name, theme, document));
+  children.push(titleParagraph(feature.name, theme, document));
 
   // Description
   if (feature.description.length) {
@@ -184,15 +259,33 @@ export async function createDocxFromFeature(
   }
 
   // Background
-  if (feature.background) {
+  if (feature.background && feature.background.steps.length > 0) {
     children.push(backgroundHeading(feature.background.name, theme, document));
-    children.push(stepsTable(feature.background.steps, theme, document));
+
+    const bgElements = stepsTable(feature.background.steps, theme, document);
+    children.push(...bgElements);
+  }
+
+  // Handle Scenario Outlines - expand each example into a separate scenario
+  const expandedScenarios: Scenario[] = [];
+  for (const sc of feature.scenarios) {
+    if (sc.isOutline && feature.examples && feature.examples.length > 0) {
+      // Expand each example row into a separate scenario
+      feature.examples.forEach(example => {
+        example.rows.forEach(row => {
+          expandedScenarios.push(expandScenarioOutline(sc, row, example.headers));
+        });
+      });
+    } else {
+      expandedScenarios.push(sc);
+    }
   }
 
   // Scenarios
-  for (const sc of feature.scenarios) {
+  for (const sc of expandedScenarios) {
     children.push(scenarioHeading(sc.name, theme, document));
-    children.push(stepsTable(sc.steps, theme, document));
+    const scElements = stepsTable(sc.steps, theme, document);
+    children.push(...scElements);
   }
 
   const doc = new Document({

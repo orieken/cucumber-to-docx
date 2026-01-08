@@ -7,39 +7,33 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: read
+  contents: write
+  packages: write
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test-build:
+  test-build-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          registry-url: 'https://registry.npmjs.org/'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 10
-
-      - name: Debug pnpm environment (temporary)
-        run: |
-          echo "--- env ---"
-          node --version || true
-          pnpm --version || true
-          echo "--- pwd & ls ---"
-          pwd
-          ls -la
-          echo "--- lockfile head ---"
-          head -n 40 pnpm-lock.yaml || true
 
       - name: Cache pnpm store
         uses: actions/cache@v4
@@ -50,8 +44,7 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -62,11 +55,31 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Upload build artifacts (optional)
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: |
-            dist
-            dist-cli
+      - name: Configure Git
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: bump
+        run: |
+          npm version patch -m "chore: bump version to %s [skip ci]"
+          echo "new_version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Push changes and tags
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          git push
+          git push --tags
+
+      - name: Configure npm auth
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to npm
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --no-git-checks

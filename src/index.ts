@@ -1,5 +1,5 @@
 export { parseFeatureFile } from './lib/featureParser.js';
-export type { ParsedFeature, Scenario } from './lib/featureParser.js';
+export type { ParsedFeature, Scenario, Step, DataTable, Example } from './lib/featureParser.js';
 export { createDocxFromFeature } from './lib/docxWriter.js';
 export { defaultTheme, mergeTheme } from './lib/theme.js';
 export type { ThemeConfig, PartialTheme } from './lib/theme.js';

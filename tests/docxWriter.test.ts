@@ -31,19 +31,19 @@ describe('createDocxFromFeature', () => {
         {
           name: 'Register a new pokemon to user account',
           steps: [
-            'Given I am a user with an active account',
-            'When I navigate to the "Add Pokemon" section',
-            'Then I should see a confirmation message "Pokemon registered successfully!"',
-            'And the new pokemon "Pikachu" should be listed in my pokemon library'
+            { text: 'Given I am a user with an active account' },
+            { text: 'When I navigate to the "Add Pokemon" section' },
+            { text: 'Then I should see a confirmation message "Pokemon registered successfully!"' },
+            { text: 'And the new pokemon "Pikachu" should be listed in my pokemon library' }
           ]
         },
         {
           name: 'Register a new pokemon and assign to active team',
           steps: [
-            'Given I am on the dashboard',
-            'When I click on the "Register Pokemon" button',
-            'Then I should see a confirmation message "Pokemon registered successfully!"',
-            'And the pokemon "Charizard" should be assigned to the active team "Team Alpha"'
+            { text: 'Given I am on the dashboard' },
+            { text: 'When I click on the "Register Pokemon" button' },
+            { text: 'Then I should see a confirmation message "Pokemon registered successfully!"' },
+            { text: 'And the pokemon "Charizard" should be assigned to the active team "Team Alpha"' }
           ]
         }
       ]
@@ -62,7 +62,7 @@ describe('createDocxFromFeature', () => {
       description: [],
       background: null,
       scenarios: [
-        { name: 'Simple scenario', steps: ['Given something', 'Then result is shown'] }
+        { name: 'Simple scenario', steps: [{ text: 'Given something' }, { text: 'Then result is shown' }] }
       ]
     };
 
@@ -88,10 +88,10 @@ describe('createDocxFromFeature', () => {
       description: [],
       background: {
         name: 'Setup',
-        steps: ['Given database is clean']
+        steps: [{ text: 'Given database is clean' }]
       },
       scenarios: [
-        { name: 'Scenario 1', steps: ['When action', 'Then result'] }
+        { name: 'Scenario 1', steps: [{ text: 'When action' }, { text: 'Then result' }] }
       ]
     };
 
@@ -108,17 +108,17 @@ import { defaultDocumentSettings } from '../src/lib/options.js';
 
 describe('stepsTable', () => {
   it('correctly defaults context to Given', () => {
-    const steps = ['And I do something'];
+    const steps = [{ text: 'And I do something' }];
     const table = stepsTable(steps, defaultTheme, defaultDocumentSettings);
     expect(table).toBeDefined();
   });
 
   it('correctly handles And after Given/When (Not expected result)', () => {
     const steps = [
-      'Given I am here',
-      'And I go there',
-      'When I do this',
-      'And I do that'
+      { text: 'Given I am here' },
+      { text: 'And I go there' },
+      { text: 'When I do this' },
+      { text: 'And I do that' }
     ];
     const table = stepsTable(steps, defaultTheme, defaultDocumentSettings);
     expect(table).toBeDefined();
@@ -126,8 +126,8 @@ describe('stepsTable', () => {
 
   it('correctly handles And after Then (Expected result)', () => {
     const steps = [
-      'Then I see a message',
-      'And the message is valid'
+      { text: 'Then I see a message' },
+      { text: 'And the message is valid' }
     ];
     const table = stepsTable(steps, defaultTheme, defaultDocumentSettings);
     expect(table).toBeDefined();
@@ -135,16 +135,16 @@ describe('stepsTable', () => {
   
   it('switches context from Given to Then correctly', () => {
       const steps = [
-          'Given I am user',
-          'Then I see dashboard',
-          'And I see menu'
+          { text: 'Given I am user' },
+          { text: 'Then I see dashboard' },
+          { text: 'And I see menu' }
       ];
       const table = stepsTable(steps, defaultTheme, defaultDocumentSettings);
       expect(table).toBeDefined();
   });
 
   it('handles steps that do not start with keywords (coverage)', () => {
-    const steps = ['Just some text'];
+    const steps = [{ text: 'Just some text' }];
     const table = stepsTable(steps, defaultTheme, defaultDocumentSettings);
     expect(table).toBeDefined();
   });

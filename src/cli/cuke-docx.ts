@@ -6,6 +6,7 @@ import { convertFeatureFile, parseFeatureFile, createDocxFromFeature } from '../
 import { defaultTheme } from '../index.js';
 import { defaultDocumentSettings } from '../index.js';
 import type { DocxOptions } from '../lib/options.js';
+import { expandScenarioOutline } from '../lib/docxWriter.js';
 
 function usage(): void {
   console.log('Usage: cuke-docx <input.feature|directory>');
@@ -145,24 +146,45 @@ async function processSingleFile(inputAbs: string, options: DocxOptions | undefi
       return;
     }
 
+    // Expand scenario outlines before splitting
+    const expandedScenarios: Array<{ name: string; scenario: typeof feature.scenarios[0] }> = [];
+    
+    for (const sc of feature.scenarios) {
+      if (sc.isOutline && feature.examples && feature.examples.length > 0) {
+        // Expand each example row into a separate scenario
+        feature.examples.forEach(example => {
+          example.rows.forEach((row, rowIdx) => {
+            const expanded = expandScenarioOutline(sc, row, example.headers);
+            // Create unique name for each expanded scenario
+            const expandedName = `${sc.name}_example_${rowIdx + 1}`;
+            expandedScenarios.push({ name: expandedName, scenario: expanded });
+          });
+        });
+      } else {
+        expandedScenarios.push({ name: sc.name, scenario: sc });
+      }
+    }
+
+    if (expandedScenarios.length === 0) {
+      console.warn(`No scenarios to process in ${basename(inputAbs)}.`);
+      return;
+    }
+
     // e.g. docx/features/pokemon.docx -> docx/features/pokemon
     const baseDir = outPath.replace(/\.docx$/, '');
 
-    for (let i = 0; i < feature.scenarios.length; i++) {
-      const sc = feature.scenarios[i];
-      if (!sc) continue;
+    for (let i = 0; i < expandedScenarios.length; i++) {
+      const { name, scenario } = expandedScenarios[i]!;
 
-      let safeName = sanitizeFilename(sc.name);
+      let safeName = sanitizeFilename(name);
       if (!safeName) {
         safeName = `Scenario_${i + 1}`;
       }
       
       const scenarioOutPath = join(baseDir, `${safeName}.docx`);
       
-      // specific feature object for just this scenario, preserving details like name/desc/background if needed
-      // Ideally we want to keep the background for context in each split file? 
-      // The current implementation copies the whole feature but overrides scenarios.
-      const single = { ...feature, scenarios: [sc] };
+      // Create a feature object for just this scenario, preserving background
+      const single = { ...feature, scenarios: [scenario], examples: undefined };
       
       await createDocxFromFeature(single, scenarioOutPath, options);
       console.log(`✓ Wrote ${scenarioOutPath}`);
