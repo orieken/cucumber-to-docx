@@ -148,4 +148,22 @@ describe('stepsTable', () => {
     const table = stepsTable(steps, defaultTheme, defaultDocumentSettings);
     expect(table).toBeDefined();
   });
+
+  it('converts data tables to bullet lists within step cells', () => {
+    const steps = [
+      { 
+        text: 'When User enters the following credentials',
+        dataTable: {
+          headers: ['username', 'password'],
+          rows: [
+            ['testuser', 'secret123'],
+            ['admin', 'admin123']
+          ]
+        }
+      }
+    ];
+    const result = stepsTable(steps, defaultTheme, defaultDocumentSettings);
+    expect(result).toBeDefined();
+    expect(result.length).toBe(1); // Should only return the main steps table, not separate data tables
+  });
 });

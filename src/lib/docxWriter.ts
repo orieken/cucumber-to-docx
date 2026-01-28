@@ -197,11 +197,36 @@ export function stepsTable(steps: Step[], theme: ThemeConfig, doc: DocumentSetti
         }))
       : [new Paragraph({ children: [new TextRun({ text: '', color: theme.expectedText, font: doc.font, size: doc.sizes.tableText })] })];
 
+    // Build step cell children - includes step text and optional data table as bullets
+    const stepCellChildren: Paragraph[] = [
+      new Paragraph({ 
+        children: [new TextRun({ text: stepData.checkboxStep, color: theme.stepText, font: doc.font, size: doc.sizes.tableText })],
+        spacing: { before: 0, after: 0 }
+      })
+    ];
+
+    // If there's a data table, convert it to bullet points
+    if (stepData.dataTable && stepData.dataTable.headers.length > 0) {
+      stepData.dataTable.rows.forEach(row => {
+        // Create a bullet for each header:value pair
+        stepData.dataTable!.headers.forEach((header, idx) => {
+          const bulletText = `      * ${header}: ${row[idx] || ''}`;
+          
+          stepCellChildren.push(
+            new Paragraph({
+              children: [new TextRun({ text: bulletText, color: theme.stepText, font: doc.font, size: doc.sizes.tableText })],
+              spacing: { before: 0, after: 0 }
+            })
+          );
+        });
+      });
+    }
+
     rows.push(
       new TableRow({
         children: [
           new TableCell({
-            children: [new Paragraph({ children: [new TextRun({ text: stepData.checkboxStep, color: theme.stepText, font: doc.font, size: doc.sizes.tableText })] })],
+            children: stepCellChildren,
             shading: { type: ShadingType.CLEAR, color: 'auto', fill: theme.dataBgStep }
           }),
           new TableCell({
@@ -231,12 +256,6 @@ export function stepsTable(steps: Step[], theme: ThemeConfig, doc: DocumentSetti
   });
 
   results.push(stepsTableElement);
-
-  stepDataList.forEach((stepData) => {
-    if (stepData.dataTable && stepData.dataTable.headers.length > 0) {
-      results.push(createDataTable(stepData.dataTable.headers, stepData.dataTable.rows, theme, doc));
-    }
-  });
 
   return results;
 }
