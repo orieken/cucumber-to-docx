@@ -44,44 +44,6 @@ function backgroundHeading(text: string, theme: ThemeConfig, doc: DocumentSettin
 }
 
 /**
- * Create a simple data table for displaying test data
- */
-function createDataTable(headers: string[], rows: string[][], theme: ThemeConfig, doc: DocumentSettings): Table {
-  const headerRow = new TableRow({
-    children: headers.map(h => new TableCell({
-      children: [new Paragraph({ 
-        children: [new TextRun({ text: h, bold: true, color: theme.headerText, font: doc.font, size: doc.sizes.tableText })],
-        spacing: { before: 0, after: 0 }
-      })],
-      shading: { type: ShadingType.CLEAR, color: 'auto', fill: theme.headerBg }
-    }))
-  });
-
-  const dataRows = rows.map(row => new TableRow({
-    children: row.map(cell => new TableCell({
-      children: [new Paragraph({
-        children: [new TextRun({ text: cell, color: theme.stepText, font: doc.font, size: doc.sizes.tableText })],
-        spacing: { before: 0, after: 0 }
-      })],
-      shading: { type: ShadingType.CLEAR, color: 'auto', fill: theme.dataBgStep }
-    }))
-  }));
-
-  return new Table({
-    width: { size: doc.table.widthPct, type: WidthType.PERCENTAGE },
-    borders: {
-      top: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
-      bottom: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
-      left: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
-      right: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
-      insideHorizontal: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE },
-      insideVertical: { color: theme.tableBorder, size: doc.table.borderSize, style: BorderStyle.SINGLE }
-    },
-    rows: [headerRow, ...dataRows]
-  });
-}
-
-/**
  * Expand scenario outline with example data
  */
 export function expandScenarioOutline(scenario: Scenario, exampleRow: string[], exampleHeaders: string[]): Scenario {

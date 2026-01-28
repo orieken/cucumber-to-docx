@@ -100,6 +100,75 @@ describe('createDocxFromFeature', () => {
     // In a real integration test we would check the content of the buffer, 
     // but here we trust the logic we verified in code review and that it didn't crash.
   });
+
+  it('expands scenario outlines with examples', async () => {
+    const feature: ParsedFeature = {
+      name: 'Feature with scenario outline',
+      description: [],
+      background: null,
+      scenarios: [
+        {
+          name: 'Login with credentials',
+          steps: [
+            { text: 'Given I am on the login page' },
+            { text: 'When I enter username <username>' },
+            { text: 'And I enter password <password>' },
+            { text: 'Then I should see <result>' }
+          ],
+          isOutline: true
+        }
+      ],
+      examples: [
+        {
+          headers: ['username', 'password', 'result'],
+          rows: [
+            ['admin', 'admin123', 'Dashboard'],
+            ['user', 'user123', 'Home Page']
+          ]
+        }
+      ]
+    };
+
+    await expect(createDocxFromFeature(feature, outPath)).resolves.toBeUndefined();
+    expect(Packer.toBuffer).toHaveBeenCalled();
+    expect(fs.writeFile).toHaveBeenCalled();
+  });
+
+  it('handles scenario outline with multiple example tables', async () => {
+    const feature: ParsedFeature = {
+      name: 'Feature with multiple examples',
+      description: [],
+      background: null,
+      scenarios: [
+        {
+          name: 'API call to <endpoint>',
+          steps: [
+            { text: 'When I call <endpoint>' },
+            { text: 'Then status is <status>' }
+          ],
+          isOutline: true
+        }
+      ],
+      examples: [
+        {
+          headers: ['endpoint', 'status'],
+          rows: [
+            ['/users', '200'],
+            ['/posts', '200']
+          ]
+        },
+        {
+          headers: ['endpoint', 'status'],
+          rows: [
+            ['/admin', '403']
+          ]
+        }
+      ]
+    };
+
+    await expect(createDocxFromFeature(feature, outPath)).resolves.toBeUndefined();
+    expect(Packer.toBuffer).toHaveBeenCalled();
+  });
 });
 
 import { stepsTable } from '../src/lib/docxWriter.js';
@@ -165,5 +234,94 @@ describe('stepsTable', () => {
     const result = stepsTable(steps, defaultTheme, defaultDocumentSettings);
     expect(result).toBeDefined();
     expect(result.length).toBe(1); // Should only return the main steps table, not separate data tables
+  });
+});
+
+import { expandScenarioOutline } from '../src/lib/docxWriter.js';
+
+describe('expandScenarioOutline', () => {
+  it('replaces placeholders with example values', () => {
+    const scenario = {
+      name: 'Login with <username>',
+      steps: [
+        { text: 'Given I am on the login page' },
+        { text: 'When I enter username <username>' },
+        { text: 'And I enter password <password>' },
+        { text: 'Then I should see <result>' }
+      ]
+    };
+
+    const exampleRow = ['admin', 'admin123', 'Dashboard'];
+    const exampleHeaders = ['username', 'password', 'result'];
+
+    const expanded = expandScenarioOutline(scenario, exampleRow, exampleHeaders);
+
+    expect(expanded.name).toBe('Login with <username> - admin');
+    expect(expanded.steps[0]?.text).toBe('Given I am on the login page');
+    expect(expanded.steps[1]?.text).toBe('When I enter username admin');
+    expect(expanded.steps[2]?.text).toBe('And I enter password admin123');
+    expect(expanded.steps[3]?.text).toBe('Then I should see Dashboard');
+  });
+
+  it('handles empty example values', () => {
+    const scenario = {
+      name: 'Test <value>',
+      steps: [
+        { text: 'When I use <value>' }
+      ]
+    };
+
+    const exampleRow = [''];
+    const exampleHeaders = ['value'];
+
+    const expanded = expandScenarioOutline(scenario, exampleRow, exampleHeaders);
+
+    expect(expanded.name).toBe('Test <value> - ');
+    expect(expanded.steps[0]?.text).toBe('When I use ');
+  });
+
+  it('preserves data tables in expanded steps', () => {
+    const scenario = {
+      name: 'Scenario with data table',
+      steps: [
+        { 
+          text: 'When I submit <action>',
+          dataTable: {
+            headers: ['field', 'value'],
+            rows: [['name', 'test']]
+          }
+        }
+      ]
+    };
+
+    const exampleRow = ['create'];
+    const exampleHeaders = ['action'];
+
+    const expanded = expandScenarioOutline(scenario, exampleRow, exampleHeaders);
+
+    expect(expanded.steps[0]?.text).toBe('When I submit create');
+    expect(expanded.steps[0]?.dataTable).toBeDefined();
+    expect(expanded.steps[0]?.dataTable?.headers).toEqual(['field', 'value']);
+    expect(expanded.steps[0]?.dataTable?.rows).toEqual([['name', 'test']]);
+  });
+
+  it('handles multiple occurrences of same placeholder', () => {
+    const scenario = {
+      name: 'Repeat <item>',
+      steps: [
+        { text: 'Given <item> is available' },
+        { text: 'When I select <item>' },
+        { text: 'Then <item> should be selected' }
+      ]
+    };
+
+    const exampleRow = ['apple'];
+    const exampleHeaders = ['item'];
+
+    const expanded = expandScenarioOutline(scenario, exampleRow, exampleHeaders);
+
+    expect(expanded.steps[0]?.text).toBe('Given apple is available');
+    expect(expanded.steps[1]?.text).toBe('When I select apple');
+    expect(expanded.steps[2]?.text).toBe('Then apple should be selected');
   });
 });
