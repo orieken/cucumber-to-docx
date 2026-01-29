@@ -21,3 +21,26 @@ Feature: Odd scenarios for testing edge cases
       | CreatePost        | POST        | /post    | 201         |  
       | DeleteComment     | DELETE      | /comment | 204         |
   
+  Scenario: passing a single-row data table
+    Given User is on the Landing Page
+    When User enters the following in the search box
+      | abc | 123 |
+    And User clicks the search button
+    Then Message displayed Search Successfully 
+    And there are results are displayed
+
+  Scenario: multiple steps with different data tables
+    Given User is on the Registration Page
+    When User enters the following personal information
+      | firstName | lastName | email |
+      | John      | Doe      | john.doe@example.com |
+      | Jane      | Smith    | jane.smith@example.com |
+    And User selects the following preferences
+      | newsletter | notifications |
+      | true       | false         |
+    And User enters payment details
+      | cardNumber | cvv | expiryDate |
+      | 4111111111111111 | 123 | 12/25 |
+      | 5500000000000004 | 456 | 06/26 |
+    Then Account should be created successfully
+    And User should receive a confirmation email

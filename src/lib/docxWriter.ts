@@ -169,10 +169,25 @@ export function stepsTable(steps: Step[], theme: ThemeConfig, doc: DocumentSetti
 
     // If there's a data table, convert it to bullet points
     if (stepData.dataTable && stepData.dataTable.headers.length > 0) {
-      stepData.dataTable.rows.forEach(row => {
-        // Create a bullet for each header:value pair
-        stepData.dataTable!.headers.forEach((header, idx) => {
-          const bulletText = `      * ${header}: ${row[idx] || ''}`;
+      // If there are data rows, render each row with header:value pairs
+      if (stepData.dataTable.rows.length > 0) {
+        stepData.dataTable.rows.forEach(row => {
+          // Create a bullet for each header:value pair
+          stepData.dataTable!.headers.forEach((header, idx) => {
+            const bulletText = `      * ${header}: ${row[idx] || ''}`;
+            
+            stepCellChildren.push(
+              new Paragraph({
+                children: [new TextRun({ text: bulletText, color: theme.stepText, font: doc.font, size: doc.sizes.tableText })],
+                spacing: { before: 0, after: 0 }
+              })
+            );
+          });
+        });
+      } else {
+        // Single-row table (headers only, no data rows) - render headers as individual bullets
+        stepData.dataTable.headers.forEach((header) => {
+          const bulletText = `      * ${header}`;
           
           stepCellChildren.push(
             new Paragraph({
@@ -181,7 +196,7 @@ export function stepsTable(steps: Step[], theme: ThemeConfig, doc: DocumentSetti
             })
           );
         });
-      });
+      }
     }
 
     rows.push(

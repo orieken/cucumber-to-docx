@@ -10,9 +10,9 @@ describe('Scenario Outline expansion', () => {
     const parsed = parseFeatureFile(content);
 
     expect(parsed.name).toBe('Odd scenarios for testing edge cases');
-    expect(parsed.scenarios).toHaveLength(2);
+    expect(parsed.scenarios).toHaveLength(4);
 
-    // Check regular scenario with data table
+    // Check first scenario with data table (multi-row with headers)
     const dataTableScenario = parsed.scenarios[0];
     expect(dataTableScenario?.name).toBe('passing a data table in login');
     expect(dataTableScenario?.steps).toHaveLength(5);
@@ -28,6 +28,20 @@ describe('Scenario Outline expansion', () => {
     const outlineScenario = parsed.scenarios[1];
     expect(outlineScenario?.name).toBe('making simple api calls');
     expect(outlineScenario?.isOutline).toBe(true);
+
+    // Check single-row data table scenario
+    const singleRowScenario = parsed.scenarios[2];
+    expect(singleRowScenario?.name).toBe('passing a single-row data table');
+    const singleRowStep = singleRowScenario?.steps.find(s => s.text.startsWith('When'));
+    expect(singleRowStep?.dataTable).toBeDefined();
+    expect(singleRowStep?.dataTable?.headers).toEqual(['abc', '123']);
+    expect(singleRowStep?.dataTable?.rows).toHaveLength(0);
+
+    // Check multiple data tables scenario
+    const multiTableScenario = parsed.scenarios[3];
+    expect(multiTableScenario?.name).toBe('multiple steps with different data tables');
+    const stepsWithTables = multiTableScenario?.steps.filter(s => s.dataTable);
+    expect(stepsWithTables?.length).toBe(3); // Three steps should have data tables
 
     // Check examples
     expect(parsed.examples).toBeDefined();

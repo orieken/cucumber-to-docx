@@ -235,6 +235,21 @@ describe('stepsTable', () => {
     expect(result).toBeDefined();
     expect(result.length).toBe(1); // Should only return the main steps table, not separate data tables
   });
+
+  it('handles single-row data tables (headers only, no data rows)', () => {
+    const steps = [
+      { 
+        text: 'When User enters the following in the search box',
+        dataTable: {
+          headers: ['abc', '123'],
+          rows: [] // No data rows - single row table
+        }
+      }
+    ];
+    const result = stepsTable(steps, defaultTheme, defaultDocumentSettings);
+    expect(result).toBeDefined();
+    expect(result.length).toBe(1);
+  });
 });
 
 import { expandScenarioOutline } from '../src/lib/docxWriter.js';
